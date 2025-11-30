@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
   const { messages } = useMessages();
@@ -25,7 +26,7 @@ export default function Home() {
             <span className="text-secondary-foreground">for Richell</span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8 font-body">
-            Join us in celebrating Richell's special day! Leave a message, share memories and photos!
+            Lagay kayo message para kay bigol
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -68,14 +69,6 @@ export default function Home() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    {msg.images && msg.images.length > 0 && (
-                      <div className="mb-3 rounded-lg overflow-hidden border border-white/50">
-                        <img src={msg.images[0]} alt="Memory" className="w-full h-24 object-cover" />
-                        {msg.images.length > 1 && (
-                          <p className="text-xs text-gray-500 p-1 text-center">+{msg.images.length - 1} more</p>
-                        )}
-                      </div>
-                    )}
                     <p className="text-gray-800 line-clamp-3 font-handwriting">
                       {msg.text}
                     </p>
