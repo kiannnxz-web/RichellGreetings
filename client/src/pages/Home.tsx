@@ -1,24 +1,13 @@
 import { useMessages } from "@/lib/store";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { Plus, Gift } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Confetti } from "@/components/Confetti";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
   const { messages } = useMessages();
-  const { toast } = useToast();
-
-  const copyLink = () => {
-    const url = window.location.origin + "/richell";
-    navigator.clipboard.writeText(url);
-    toast({
-      title: "Link Copied! 🔗",
-      description: "Send this special link to Richell: " + url,
-    });
-  };
 
   return (
     <div className="min-h-screen pb-20 bg-gradient-to-b from-pink-50 to-white">
@@ -46,14 +35,6 @@ export default function Home() {
                 <Plus className="mr-2 h-5 w-5" /> Write a Message
               </Button>
             </Link>
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className="rounded-full text-lg px-8 bg-white/80 hover:bg-white border-pink-200"
-              onClick={copyLink}
-            >
-              <Gift className="mr-2 h-5 w-5" /> Get Link for Richell
-            </Button>
           </div>
         </motion.div>
       </header>

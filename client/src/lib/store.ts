@@ -10,52 +10,35 @@ export interface Message {
   timestamp: number;
 }
 
-// Kian's message is always present as the first one if no storage exists
-const KIAN_MESSAGE: Message = {
-  id: "kian-1",
-  name: "Kian",
-  text: "Happy Birthday Richell! 🎉\n\nI made this special space just for you. May your day be filled with magic, laughter, and everything you've ever wished for.\n\nEnjoy your day! ✨",
-  color: "bg-pink-100",
-  rotation: -2,
-  timestamp: Date.now(),
-};
-
 const STORAGE_KEY = "birthday-card-messages-v1";
 
-// Initialize messages from local storage, or start with just Kian's if empty
+// Initialize messages from local storage. 
+// REMOVED: No default Kian message if storage is empty. It starts clean.
 const loadMessages = (): Message[] => {
-  if (typeof window === "undefined") return [KIAN_MESSAGE];
+  if (typeof window === "undefined") return [];
   
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      const parsed = JSON.parse(saved);
-      // If we have saved messages, return them.
-      // OPTIONAL: Ensure Kian's message is always there if you want, 
-      // but usually if storage exists we trust it.
-      if (parsed.length === 0) return [KIAN_MESSAGE];
-      return parsed;
+      return JSON.parse(saved);
     }
   } catch (e) {
     console.error("Failed to load messages", e);
   }
   
-  return [KIAN_MESSAGE];
+  return [];
 };
 
 let currentMessages = loadMessages();
 const listeners = new Set<(msgs: Message[]) => void>();
 
 export function useMessages() {
-  // React state to trigger re-renders
   const [messages, setMessages] = useState<Message[]>(currentMessages);
 
   useEffect(() => {
-    // Subscribe to store updates
     const listener = (msgs: Message[]) => setMessages(msgs);
     listeners.add(listener);
     
-    // Also sync with local storage in case another tab updated it
     const handleStorage = (e: StorageEvent) => {
       if (e.key === STORAGE_KEY && e.newValue) {
         currentMessages = JSON.parse(e.newValue);
@@ -79,13 +62,11 @@ export function useMessages() {
       timestamp: Date.now(),
     };
     
-    // Update store
     currentMessages = [newMessage, ...currentMessages];
     
     // Persist
     localStorage.setItem(STORAGE_KEY, JSON.stringify(currentMessages));
     
-    // Notify listeners
     listeners.forEach((l) => l(currentMessages));
   };
 

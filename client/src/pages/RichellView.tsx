@@ -3,33 +3,22 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Confetti } from "@/components/Confetti";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Intro } from "@/components/Intro";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Sparkles } from "lucide-react";
 
 export default function RichellView() {
   const { messages } = useMessages();
+  // Always show intro on this route
   const [showIntro, setShowIntro] = useState(true);
-
-  useEffect(() => {
-    // For Richell's page, we always show intro on first load of the session
-    // But if they refresh, maybe we skip? 
-    // User requested "intro it", so let's keep it simple and show it.
-    // But let's use a specific key for Richell so it doesn't conflict with other views if any.
-    const hasSeenIntro = sessionStorage.getItem("hasSeenRichellIntro");
-    if (hasSeenIntro) {
-      setShowIntro(false);
-    }
-  }, []);
 
   const handleIntroComplete = () => {
     setShowIntro(false);
-    sessionStorage.setItem("hasSeenRichellIntro", "true");
   };
 
   return (
     <>
       <AnimatePresence>
-        {showIntro && <Intro onComplete={handleIntroComplete} />}
+        {showIntro && <Intro onComplete={handleIntroComplete} messages={messages} />}
       </AnimatePresence>
 
       {!showIntro && (
@@ -124,10 +113,6 @@ export default function RichellView() {
               </div>
             )}
           </main>
-          
-          <footer className="text-center py-10 text-gray-400 text-sm">
-            Made with ❤️ by Kian
-          </footer>
         </motion.div>
       )}
     </>
