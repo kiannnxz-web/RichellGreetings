@@ -12,8 +12,6 @@ export interface Message {
 
 const STORAGE_KEY = "birthday-card-messages-v1";
 
-// Initialize messages from local storage. 
-// REMOVED: No default Kian message if storage is empty. It starts clean.
 const loadMessages = (): Message[] => {
   if (typeof window === "undefined") return [];
   
@@ -31,6 +29,11 @@ const loadMessages = (): Message[] => {
 
 let currentMessages = loadMessages();
 const listeners = new Set<(msgs: Message[]) => void>();
+
+const notifyListeners = () => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(currentMessages));
+  listeners.forEach((l) => l(currentMessages));
+};
 
 export function useMessages() {
   const [messages, setMessages] = useState<Message[]>(currentMessages);
@@ -63,12 +66,20 @@ export function useMessages() {
     };
     
     currentMessages = [newMessage, ...currentMessages];
-    
-    // Persist
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(currentMessages));
-    
-    listeners.forEach((l) => l(currentMessages));
+    notifyListeners();
   };
 
-  return { messages, addMessage };
+  const deleteMessage = (id: string) => {
+    currentMessages = currentMessages.filter(m => m.id !== id);
+    notifyListeners();
+  };
+
+  const updateMessage = (id: string, updates: Partial<Message>) => {
+    currentMessages = currentMessages.map(m => 
+      m.id === id ? { ...m, ...updates } : m
+    );
+    notifyListeners();
+  };
+
+  return { messages, addMessage, deleteMessage, updateMessage };
 }

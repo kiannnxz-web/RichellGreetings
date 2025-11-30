@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import RichellView from "@/pages/RichellView";
 import SignCard from "@/pages/SignCard";
+import Admin from "@/pages/Admin";
 
 function Router() {
   return (
@@ -14,6 +15,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/richell" component={RichellView} />
       <Route path="/sign" component={SignCard} />
+      <Route path="/admin" component={Admin} />
       <Route component={NotFound} />
     </Switch>
   );
