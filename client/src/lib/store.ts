@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export interface Message {
   id: string;
@@ -7,79 +8,98 @@ export interface Message {
   images?: string[];
   color: string;
   rotation: number;
-  timestamp: number;
+  timestamp: string | Date;
 }
 
-const STORAGE_KEY = "birthday-card-messages-v1";
+const API_BASE = "/api";
 
-const loadMessages = (): Message[] => {
-  if (typeof window === "undefined") return [];
-  
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      return JSON.parse(saved);
-    }
-  } catch (e) {
-    console.error("Failed to load messages", e);
-  }
-  
-  return [];
-};
+async function fetchMessages(): Promise<Message[]> {
+  const response = await fetch(`${API_BASE}/messages`);
+  if (!response.ok) throw new Error("Failed to fetch messages");
+  return response.json();
+}
 
-let currentMessages = loadMessages();
-const listeners = new Set<(msgs: Message[]) => void>();
+async function createMessageAPI(message: Omit<Message, "id" | "timestamp">): Promise<Message> {
+  const response = await fetch(`${API_BASE}/messages`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(message),
+  });
+  if (!response.ok) throw new Error("Failed to create message");
+  return response.json();
+}
 
-const notifyListeners = () => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(currentMessages));
-  listeners.forEach((l) => l(currentMessages));
-};
+async function updateMessageAPI(id: string, updates: Partial<Message>): Promise<Message> {
+  const response = await fetch(`${API_BASE}/messages/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(updates),
+  });
+  if (!response.ok) throw new Error("Failed to update message");
+  return response.json();
+}
+
+async function deleteMessageAPI(id: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/messages/${id}`, {
+    method: "DELETE",
+  });
+  if (!response.ok) throw new Error("Failed to delete message");
+}
 
 export function useMessages() {
-  const [messages, setMessages] = useState<Message[]>(currentMessages);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const listener = (msgs: Message[]) => setMessages(msgs);
-    listeners.add(listener);
-    
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY && e.newValue) {
-        currentMessages = JSON.parse(e.newValue);
-        listeners.forEach(l => l(currentMessages));
-      }
-    };
-    window.addEventListener('storage', handleStorage);
+  const { data: messages = [], isLoading } = useQuery({
+    queryKey: ["messages"],
+    queryFn: fetchMessages,
+  });
 
-    return () => {
-      listeners.delete(listener);
-      window.removeEventListener('storage', handleStorage);
-    };
-  }, []);
+  const addMessageMutation = useMutation({
+    mutationFn: (message: Omit<Message, "id" | "timestamp">) => createMessageAPI(message),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["messages"] });
+    },
+  });
+
+  const updateMessageMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<Message> }) =>
+      updateMessageAPI(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["messages"] });
+    },
+  });
+
+  const deleteMessageMutation = useMutation({
+    mutationFn: (id: string) => deleteMessageAPI(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["messages"] });
+    },
+  });
 
   const addMessage = (message: Omit<Message, "id" | "rotation" | "color" | "timestamp">) => {
-    const newMessage: Message = {
+    const messageWithDefaults = {
       ...message,
-      id: Math.random().toString(36).substr(2, 9),
       rotation: Math.random() * 6 - 3,
-      color: ["bg-pink-100", "bg-yellow-100", "bg-green-100", "bg-purple-100", "bg-blue-100"][Math.floor(Math.random() * 5)],
-      timestamp: Date.now(),
+      color: ["bg-pink-100", "bg-yellow-100", "bg-green-100", "bg-purple-100", "bg-blue-100"][
+        Math.floor(Math.random() * 5)
+      ],
     };
-    
-    currentMessages = [newMessage, ...currentMessages];
-    notifyListeners();
+    addMessageMutation.mutate(messageWithDefaults);
   };
 
   const deleteMessage = (id: string) => {
-    currentMessages = currentMessages.filter(m => m.id !== id);
-    notifyListeners();
+    deleteMessageMutation.mutate(id);
   };
 
   const updateMessage = (id: string, updates: Partial<Message>) => {
-    currentMessages = currentMessages.map(m => 
-      m.id === id ? { ...m, ...updates } : m
-    );
-    notifyListeners();
+    updateMessageMutation.mutate({ id, updates });
   };
 
-  return { messages, addMessage, deleteMessage, updateMessage };
+  return {
+    messages,
+    isLoading,
+    addMessage,
+    deleteMessage,
+    updateMessage,
+  };
 }
