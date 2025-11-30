@@ -4,28 +4,40 @@ import { Confetti } from "@/components/Confetti";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Intro } from "@/components/Intro";
 import { useState } from "react";
-import { Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { Sparkles, ChevronLeft, ChevronRight, X, Film } from "lucide-react";
 
 export default function RichellView() {
   const { messages } = useMessages();
   const [showIntro, setShowIntro] = useState(true);
-  const [imageSlides, setImageSlides] = useState<{ [key: string]: number }>({});
+  const [mediaSlides, setMediaSlides] = useState<{ [key: string]: number }>({});
+  const [lightboxMedia, setLightboxMedia] = useState<{ src: string; type: 'image' | 'video' } | null>(null);
 
   const handleIntroComplete = () => {
     setShowIntro(false);
   };
 
-  const nextImage = (msgId: string, maxImages: number) => {
-    setImageSlides(prev => ({
+  const getMediaArray = (msg: any) => {
+    const media: Array<{ src: string; type: 'image' | 'video' }> = [];
+    if (msg.images) {
+      msg.images.forEach((img: string) => media.push({ src: img, type: 'image' }));
+    }
+    if (msg.videos) {
+      msg.videos.forEach((vid: string) => media.push({ src: vid, type: 'video' }));
+    }
+    return media;
+  };
+
+  const nextMedia = (msgId: string, maxMedia: number) => {
+    setMediaSlides(prev => ({
       ...prev,
-      [msgId]: ((prev[msgId] || 0) + 1) % maxImages
+      [msgId]: ((prev[msgId] || 0) + 1) % maxMedia
     }));
   };
 
-  const prevImage = (msgId: string, maxImages: number) => {
-    setImageSlides(prev => ({
+  const prevMedia = (msgId: string, maxMedia: number) => {
+    setMediaSlides(prev => ({
       ...prev,
-      [msgId]: ((prev[msgId] || 0) - 1 + maxImages) % maxImages
+      [msgId]: ((prev[msgId] || 0) - 1 + maxMedia) % maxMedia
     }));
   };
 
@@ -108,36 +120,62 @@ export default function RichellView() {
                         </div>
                       </CardHeader>
                       <CardContent>
-                        {msg.images && msg.images.length > 0 && (
-                          <div className="mb-6 relative">
-                            <div className="rounded-xl overflow-hidden border-4 border-white shadow-md transform rotate-1 group-hover:rotate-0 transition-transform duration-500">
-                              <img 
-                                src={msg.images[imageSlides[msg.id] || 0]} 
-                                alt="Memory" 
-                                className="w-full h-64 object-cover" 
-                              />
-                            </div>
-                            {msg.images.length > 1 && (
-                              <div className="flex items-center justify-between mt-2 px-2">
-                                <button
-                                  onClick={() => prevImage(msg.id, msg.images!.length)}
-                                  className="p-1 rounded-full bg-white/50 hover:bg-white transition-colors"
+                        {(() => {
+                          const mediaArray = getMediaArray(msg);
+                          if (mediaArray.length > 0) {
+                            const currentMedia = mediaArray[mediaSlides[msg.id] || 0];
+                            return (
+                              <div className="mb-6 relative">
+                                <div 
+                                  className="rounded-xl overflow-hidden border-4 border-white shadow-md transform rotate-1 group-hover:rotate-0 transition-transform duration-500 cursor-pointer"
+                                  onClick={() => setLightboxMedia(currentMedia)}
+                                  data-testid={`media-preview-${msg.id}`}
                                 >
-                                  <ChevronLeft className="h-4 w-4 text-gray-800" />
-                                </button>
-                                <span className="text-sm text-gray-600">
-                                  {(imageSlides[msg.id] || 0) + 1} / {msg.images.length}
-                                </span>
-                                <button
-                                  onClick={() => nextImage(msg.id, msg.images!.length)}
-                                  className="p-1 rounded-full bg-white/50 hover:bg-white transition-colors"
-                                >
-                                  <ChevronRight className="h-4 w-4 text-gray-800" />
-                                </button>
+                                  {currentMedia.type === 'image' ? (
+                                    <img 
+                                      src={currentMedia.src} 
+                                      alt="Memory" 
+                                      className="w-full h-64 object-cover" 
+                                    />
+                                  ) : (
+                                    <div className="relative bg-black">
+                                      <video 
+                                        src={currentMedia.src} 
+                                        className="w-full h-64 object-cover" 
+                                        controls={false}
+                                      />
+                                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                                        <Film className="h-12 w-12 text-white" />
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                                {mediaArray.length > 1 && (
+                                  <div className="flex items-center justify-between mt-2 px-2">
+                                    <button
+                                      onClick={() => prevMedia(msg.id, mediaArray.length)}
+                                      className="p-1 rounded-full bg-white/50 hover:bg-white transition-colors"
+                                      data-testid={`button-prev-media-${msg.id}`}
+                                    >
+                                      <ChevronLeft className="h-4 w-4 text-gray-800" />
+                                    </button>
+                                    <span className="text-sm text-gray-600">
+                                      {(mediaSlides[msg.id] || 0) + 1} / {mediaArray.length}
+                                    </span>
+                                    <button
+                                      onClick={() => nextMedia(msg.id, mediaArray.length)}
+                                      className="p-1 rounded-full bg-white/50 hover:bg-white transition-colors"
+                                      data-testid={`button-next-media-${msg.id}`}
+                                    >
+                                      <ChevronRight className="h-4 w-4 text-gray-800" />
+                                    </button>
+                                  </div>
+                                )}
                               </div>
-                            )}
-                          </div>
-                        )}
+                            );
+                          }
+                          return null;
+                        })()}
                         <p className="text-xl leading-relaxed font-medium text-gray-800 whitespace-pre-wrap font-handwriting">
                           "{msg.text}"
                         </p>
@@ -152,6 +190,52 @@ export default function RichellView() {
               </div>
             )}
           </main>
+
+          {/* Lightbox Modal */}
+          <AnimatePresence>
+            {lightboxMedia && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+                onClick={() => setLightboxMedia(null)}
+                data-testid="lightbox-modal"
+              >
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                  className="max-w-4xl max-h-[90vh] relative"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {lightboxMedia.type === 'image' ? (
+                    <img 
+                      src={lightboxMedia.src} 
+                      alt="Full view" 
+                      className="w-full h-full object-contain rounded-lg"
+                      data-testid="lightbox-image"
+                    />
+                  ) : (
+                    <video 
+                      src={lightboxMedia.src} 
+                      className="w-full h-full object-contain rounded-lg"
+                      controls
+                      autoPlay
+                      data-testid="lightbox-video"
+                    />
+                  )}
+                  <button
+                    onClick={() => setLightboxMedia(null)}
+                    className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors"
+                    data-testid="button-close-lightbox"
+                  >
+                    <X className="h-8 w-8" />
+                  </button>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       )}
     </>

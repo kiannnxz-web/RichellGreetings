@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Image as ImageIcon, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, Image as ImageIcon, Send, Trash2, Film } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 
@@ -18,6 +18,7 @@ export default function SignCard() {
   const [name, setName] = useState("");
   const [text, setText] = useState("");
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [videoPreviews, setVideoPreviews] = useState<string[]>([]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +28,7 @@ export default function SignCard() {
       name,
       text,
       images: imagePreviews.length > 0 ? imagePreviews : undefined,
+      videos: videoPreviews.length > 0 ? videoPreviews : undefined,
     });
 
     toast({
@@ -50,8 +52,25 @@ export default function SignCard() {
     }
   };
 
+  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setVideoPreviews(prev => [...prev, reader.result as string]);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
   const removeImage = (index: number) => {
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeVideo = (index: number) => {
+    setVideoPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -100,42 +119,95 @@ export default function SignCard() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="images" className="text-lg cursor-pointer flex items-center gap-2 hover:text-primary transition-colors">
-                  <ImageIcon className="h-5 w-5" /> Add Photos (Optional - Multiple)
-                </Label>
-                <Input
-                  id="images"
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={handleImageUpload}
-                />
+                <Label className="text-lg">Add Media (Optional)</Label>
                 
-                {imagePreviews.length > 0 && (
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    {imagePreviews.map((preview, i) => (
-                      <div key={i} className="relative rounded-lg overflow-hidden border-2 border-pink-100">
-                        <img src={preview} alt={`Preview ${i}`} className="w-full h-24 object-cover" />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          className="absolute top-1 right-1"
-                          onClick={() => removeImage(i)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
+                {/* Images Section */}
+                <div className="space-y-2">
+                  <Label htmlFor="images" className="text-sm cursor-pointer flex items-center gap-2 hover:text-primary transition-colors">
+                    <ImageIcon className="h-4 w-4" /> Photos
+                  </Label>
+                  <Input
+                    id="images"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleImageUpload}
+                  />
+                  
+                  {imagePreviews.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2 mb-2">
+                      {imagePreviews.map((preview, i) => (
+                        <div key={i} className="relative rounded-lg overflow-hidden border-2 border-pink-100">
+                          <img src={preview} alt={`Preview ${i}`} className="w-full h-20 object-cover" />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-1 right-1 h-6 w-6 p-0"
+                            onClick={() => removeImage(i)}
+                            data-testid={`button-remove-image-${i}`}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <div 
+                    onClick={() => document.getElementById('images')?.click()}
+                    className="border-2 border-dashed border-pink-200 rounded-lg p-4 text-center cursor-pointer hover:bg-pink-50/50 transition-colors"
+                    data-testid="area-upload-images"
+                  >
+                    <p className="text-sm text-muted-foreground">Click to add photos ({imagePreviews.length})</p>
                   </div>
-                )}
-                
-                <div 
-                  onClick={() => document.getElementById('images')?.click()}
-                  className="border-2 border-dashed border-pink-200 rounded-lg p-8 text-center cursor-pointer hover:bg-pink-50/50 transition-colors"
-                >
-                  <p className="text-muted-foreground">Click to upload photos ({imagePreviews.length})</p>
+                </div>
+
+                {/* Videos Section */}
+                <div className="space-y-2">
+                  <Label htmlFor="videos" className="text-sm cursor-pointer flex items-center gap-2 hover:text-primary transition-colors">
+                    <Film className="h-4 w-4" /> Videos
+                  </Label>
+                  <Input
+                    id="videos"
+                    type="file"
+                    accept="video/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleVideoUpload}
+                  />
+                  
+                  {videoPreviews.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2 mb-2">
+                      {videoPreviews.map((preview, i) => (
+                        <div key={i} className="relative rounded-lg overflow-hidden border-2 border-purple-100 bg-gray-100">
+                          <video src={preview} className="w-full h-20 object-cover" />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                            <Film className="h-5 w-5 text-white" />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-1 right-1 h-6 w-6 p-0"
+                            onClick={() => removeVideo(i)}
+                            data-testid={`button-remove-video-${i}`}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <div 
+                    onClick={() => document.getElementById('videos')?.click()}
+                    className="border-2 border-dashed border-purple-200 rounded-lg p-4 text-center cursor-pointer hover:bg-purple-50/50 transition-colors"
+                    data-testid="area-upload-videos"
+                  >
+                    <p className="text-sm text-muted-foreground">Click to add videos ({videoPreviews.length})</p>
+                  </div>
                 </div>
               </div>
 

@@ -22,6 +22,7 @@ export const messages = pgTable("messages", {
   name: text("name").notNull(),
   text: text("text").notNull(),
   images: text("images").array(),
+  videos: text("videos").array(),
   color: text("color").notNull(),
   rotation: real("rotation").notNull(),
   timestamp: timestamp("timestamp").notNull().defaultNow(),

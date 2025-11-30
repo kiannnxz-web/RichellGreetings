@@ -6,6 +6,7 @@ export interface Message {
   name: string;
   text: string;
   images?: string[];
+  videos?: string[];
   color: string;
   rotation: number;
   timestamp: string | Date;
