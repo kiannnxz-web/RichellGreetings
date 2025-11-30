@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, Edit2, Save, X } from "lucide-react";
+import { Trash2, Edit2, Save, X, Trash } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Admin() {
@@ -38,6 +38,13 @@ export default function Admin() {
         description: "The message has been removed.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleRemoveImage = (imageIndex: number) => {
+    if (editForm.images) {
+      const newImages = editForm.images.filter((_, i) => i !== imageIndex);
+      setEditForm({...editForm, images: newImages.length > 0 ? newImages : undefined});
     }
   };
 
@@ -94,6 +101,27 @@ export default function Admin() {
                           className="min-h-[100px]"
                         />
                       </div>
+                      {editForm.images && editForm.images.length > 0 && (
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">Images ({editForm.images.length})</label>
+                          <div className="grid grid-cols-3 gap-2">
+                            {editForm.images.map((img, i) => (
+                              <div key={i} className="relative">
+                                <img src={img} alt={`Edit ${i}`} className="w-full h-20 object-cover rounded-md" />
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="destructive"
+                                  className="absolute top-1 right-1 h-6 w-6 p-0"
+                                  onClick={() => handleRemoveImage(i)}
+                                >
+                                  <Trash className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="grid md:grid-cols-[200px_1fr] gap-4">
@@ -102,12 +130,20 @@ export default function Admin() {
                         <p className="text-xs text-gray-500">
                           {new Date(msg.timestamp).toLocaleString()}
                         </p>
-                        {msg.image && (
-                          <img 
-                            src={msg.image} 
-                            alt="Attachment" 
-                            className="mt-2 w-full h-32 object-cover rounded-md border"
-                          />
+                        {msg.images && msg.images.length > 0 && (
+                          <div className="mt-2 space-y-1">
+                            <p className="text-xs font-medium text-gray-600">{msg.images.length} image(s)</p>
+                            <div className="grid grid-cols-2 gap-1">
+                              {msg.images.map((img, i) => (
+                                <img 
+                                  key={i}
+                                  src={img} 
+                                  alt={`Thumb ${i}`} 
+                                  className="w-full h-12 object-cover rounded border"
+                                />
+                              ))}
+                            </div>
+                          </div>
                         )}
                       </div>
                       <p className="whitespace-pre-wrap text-gray-700">{msg.text}</p>

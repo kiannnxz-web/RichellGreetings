@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Image as ImageIcon, Send } from "lucide-react";
+import { ArrowLeft, Image as ImageIcon, Send, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,7 +17,7 @@ export default function SignCard() {
   
   const [name, setName] = useState("");
   const [text, setText] = useState("");
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +26,7 @@ export default function SignCard() {
     addMessage({
       name,
       text,
-      image: imagePreview || undefined,
+      images: imagePreviews.length > 0 ? imagePreviews : undefined,
     });
 
     toast({
@@ -37,16 +37,21 @@ export default function SignCard() {
     setLocation("/");
   };
 
-  // Mock image upload
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    const files = e.target.files;
+    if (files) {
+      Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreviews(prev => [...prev, reader.result as string]);
+        };
+        reader.readAsDataURL(file);
+      });
     }
+  };
+
+  const removeImage = (index: number) => {
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -61,7 +66,7 @@ export default function SignCard() {
           className="mb-6 hover:bg-transparent hover:text-primary"
           onClick={() => setLocation("/")}
         >
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Card
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back
         </Button>
 
         <Card className="border-none shadow-xl bg-white/80 backdrop-blur-md">
@@ -95,38 +100,43 @@ export default function SignCard() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="image" className="text-lg cursor-pointer flex items-center gap-2 hover:text-primary transition-colors">
-                  <ImageIcon className="h-5 w-5" /> Add a Photo (Optional)
+                <Label htmlFor="images" className="text-lg cursor-pointer flex items-center gap-2 hover:text-primary transition-colors">
+                  <ImageIcon className="h-5 w-5" /> Add Photos (Optional - Multiple)
                 </Label>
                 <Input
-                  id="image"
+                  id="images"
                   type="file"
                   accept="image/*"
+                  multiple
                   className="hidden"
                   onChange={handleImageUpload}
                 />
-                {imagePreview && (
-                  <div className="relative mt-2 rounded-lg overflow-hidden border-2 border-pink-100">
-                    <img src={imagePreview} alt="Preview" className="w-full h-48 object-cover" />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-2 right-2"
-                      onClick={() => setImagePreview(null)}
-                    >
-                      Remove
-                    </Button>
+                
+                {imagePreviews.length > 0 && (
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {imagePreviews.map((preview, i) => (
+                      <div key={i} className="relative rounded-lg overflow-hidden border-2 border-pink-100">
+                        <img src={preview} alt={`Preview ${i}`} className="w-full h-24 object-cover" />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="absolute top-1 right-1"
+                          onClick={() => removeImage(i)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
                 )}
-                {!imagePreview && (
-                  <div 
-                    onClick={() => document.getElementById('image')?.click()}
-                    className="border-2 border-dashed border-pink-200 rounded-lg p-8 text-center cursor-pointer hover:bg-pink-50/50 transition-colors"
-                  >
-                    <p className="text-muted-foreground">Click to upload a memory</p>
-                  </div>
-                )}
+                
+                <div 
+                  onClick={() => document.getElementById('images')?.click()}
+                  className="border-2 border-dashed border-pink-200 rounded-lg p-8 text-center cursor-pointer hover:bg-pink-50/50 transition-colors"
+                >
+                  <p className="text-muted-foreground">Click to upload photos ({imagePreviews.length})</p>
+                </div>
               </div>
 
               <Button type="submit" size="lg" className="w-full text-lg bg-primary hover:bg-primary/90 shadow-lg">

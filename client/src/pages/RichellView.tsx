@@ -4,15 +4,29 @@ import { Confetti } from "@/components/Confetti";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Intro } from "@/components/Intro";
 import { useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function RichellView() {
   const { messages } = useMessages();
-  // Always show intro on this route
   const [showIntro, setShowIntro] = useState(true);
+  const [imageSlides, setImageSlides] = useState<{ [key: string]: number }>({});
 
   const handleIntroComplete = () => {
     setShowIntro(false);
+  };
+
+  const nextImage = (msgId: string, maxImages: number) => {
+    setImageSlides(prev => ({
+      ...prev,
+      [msgId]: ((prev[msgId] || 0) + 1) % maxImages
+    }));
+  };
+
+  const prevImage = (msgId: string, maxImages: number) => {
+    setImageSlides(prev => ({
+      ...prev,
+      [msgId]: ((prev[msgId] || 0) - 1 + maxImages) % maxImages
+    }));
   };
 
   return (
@@ -94,9 +108,34 @@ export default function RichellView() {
                         </div>
                       </CardHeader>
                       <CardContent>
-                        {msg.image && (
-                          <div className="mb-6 rounded-xl overflow-hidden border-4 border-white shadow-md transform rotate-1 group-hover:rotate-0 transition-transform duration-500">
-                            <img src={msg.image} alt="Memory" className="w-full h-64 object-cover" />
+                        {msg.images && msg.images.length > 0 && (
+                          <div className="mb-6 relative">
+                            <div className="rounded-xl overflow-hidden border-4 border-white shadow-md transform rotate-1 group-hover:rotate-0 transition-transform duration-500">
+                              <img 
+                                src={msg.images[imageSlides[msg.id] || 0]} 
+                                alt="Memory" 
+                                className="w-full h-64 object-cover" 
+                              />
+                            </div>
+                            {msg.images.length > 1 && (
+                              <div className="flex items-center justify-between mt-2 px-2">
+                                <button
+                                  onClick={() => prevImage(msg.id, msg.images!.length)}
+                                  className="p-1 rounded-full bg-white/50 hover:bg-white transition-colors"
+                                >
+                                  <ChevronLeft className="h-4 w-4 text-gray-800" />
+                                </button>
+                                <span className="text-sm text-gray-600">
+                                  {(imageSlides[msg.id] || 0) + 1} / {msg.images.length}
+                                </span>
+                                <button
+                                  onClick={() => nextImage(msg.id, msg.images!.length)}
+                                  className="p-1 rounded-full bg-white/50 hover:bg-white transition-colors"
+                                >
+                                  <ChevronRight className="h-4 w-4 text-gray-800" />
+                                </button>
+                              </div>
+                            )}
                           </div>
                         )}
                         <p className="text-xl leading-relaxed font-medium text-gray-800 whitespace-pre-wrap font-handwriting">

@@ -11,17 +11,16 @@ export function Intro({ onComplete, messages }: IntroProps) {
   const [step, setStep] = useState(0);
 
   // Filter messages with images for the glimpse section
-  const photoMessages = messages.filter(m => m.image);
-  const textMessages = messages.filter(m => !m.image).slice(0, 3);
+  const photoMessages = messages.filter(m => m.images && m.images.length > 0);
 
   useEffect(() => {
-    const timer1 = setTimeout(() => setStep(1), 1000); // "Made by Kian"
-    const timer2 = setTimeout(() => setStep(2), 4000); // "For Richell"
-    const timer3 = setTimeout(() => setStep(3), 7000); // "A collection..."
-    const timer4 = setTimeout(() => setStep(4), 10000); // Glimpse
+    const timer1 = setTimeout(() => setStep(1), 1000);
+    const timer2 = setTimeout(() => setStep(2), 4000);
+    const timer3 = setTimeout(() => setStep(3), 7000);
+    const timer4 = setTimeout(() => setStep(4), 10000);
     const timer5 = setTimeout(() => {
       onComplete();
-    }, 14000); // End
+    }, 14000);
 
     return () => {
       clearTimeout(timer1);
@@ -89,23 +88,23 @@ export function Intro({ onComplete, messages }: IntroProps) {
             className="absolute inset-0 flex items-center justify-center"
             exit={{ opacity: 0 }}
           >
-             {/* Fast moving collage effect */}
+             {/* Fast moving collage effect with all available images */}
              <div className="relative w-full h-full">
-               {photoMessages.slice(0, 5).map((msg, i) => (
-                 <motion.div
-                   key={msg.id}
-                   initial={{ opacity: 0, scale: 0.5, x: Math.random() * 400 - 200, y: Math.random() * 400 - 200 }}
-                   animate={{ opacity: 0.6, scale: 1 }}
-                   exit={{ opacity: 0, scale: 1.5 }}
-                   transition={{ duration: 3, delay: i * 0.3 }}
-                   className="absolute top-1/2 left-1/2 w-64 h-64 -ml-32 -mt-32"
-                   style={{ rotate: Math.random() * 20 - 10 }}
-                 >
-                   {msg.image && (
-                     <img src={msg.image} className="w-full h-full object-cover rounded-lg shadow-2xl" alt="" />
-                   )}
-                 </motion.div>
-               ))}
+               {photoMessages.slice(0, 8).flatMap((msg, msgIdx) => 
+                 msg.images!.map((img, imgIdx) => (
+                   <motion.div
+                     key={`${msg.id}-${imgIdx}`}
+                     initial={{ opacity: 0, scale: 0.5, x: Math.random() * 400 - 200, y: Math.random() * 400 - 200 }}
+                     animate={{ opacity: 0.6, scale: 1 }}
+                     exit={{ opacity: 0, scale: 1.5 }}
+                     transition={{ duration: 3, delay: (msgIdx + imgIdx) * 0.2 }}
+                     className="absolute top-1/2 left-1/2 w-64 h-64 -ml-32 -mt-32"
+                     style={{ rotate: Math.random() * 20 - 10 }}
+                   >
+                     <img src={img} className="w-full h-full object-cover rounded-lg shadow-2xl" alt="" />
+                   </motion.div>
+                 ))
+               )}
                <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}

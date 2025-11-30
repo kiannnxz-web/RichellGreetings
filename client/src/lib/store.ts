@@ -4,7 +4,7 @@ export interface Message {
   id: string;
   name: string;
   text: string;
-  image?: string;
+  images?: string[];
   color: string;
   rotation: number;
   timestamp: number;
