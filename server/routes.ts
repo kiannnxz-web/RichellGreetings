@@ -8,6 +8,11 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Health check endpoint for monitoring services like UptimeRobot
+  app.get("/health", (req, res) => {
+    res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
   // Get all messages
   app.get("/api/messages", async (req, res) => {
     try {
