@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -23,7 +23,7 @@ export const messages = pgTable("messages", {
   text: text("text").notNull(),
   images: text("images").array(),
   color: text("color").notNull(),
-  rotation: integer("rotation").notNull(),
+  rotation: real("rotation").notNull(),
   timestamp: timestamp("timestamp").notNull().defaultNow(),
 });
 
