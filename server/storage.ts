@@ -1,6 +1,26 @@
-import { db } from "./db";
-import { users, messages, type User, type InsertUser, type Message, type InsertMessage } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { readFile, writeFile, mkdir } from "fs/promises";
+import { join } from "path";
+import { randomUUID } from "crypto";
+
+export interface User {
+  id: string;
+  username: string;
+  password: string;
+}
+
+export interface Message {
+  id: string;
+  name: string;
+  text: string;
+  images?: string[];
+  videos?: string[];
+  color: string;
+  rotation: number;
+  timestamp: string;
+}
+
+export type InsertUser = Omit<User, "id">;
+export type InsertMessage = Omit<Message, "id" | "timestamp">;
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -14,40 +34,105 @@ export interface IStorage {
   deleteMessage(id: string): Promise<boolean>;
 }
 
-export class DatabaseStorage implements IStorage {
+const DATA_DIR = join(process.cwd(), "data");
+const MESSAGES_FILE = join(DATA_DIR, "messages.json");
+const USERS_FILE = join(DATA_DIR, "users.json");
+
+async function ensureDataDir() {
+  try {
+    await mkdir(DATA_DIR, { recursive: true });
+  } catch (err) {
+    // Directory might already exist
+  }
+}
+
+async function readMessages(): Promise<Message[]> {
+  try {
+    const data = await readFile(MESSAGES_FILE, "utf-8");
+    return JSON.parse(data);
+  } catch {
+    return [];
+  }
+}
+
+async function writeMessages(messages: Message[]): Promise<void> {
+  await ensureDataDir();
+  await writeFile(MESSAGES_FILE, JSON.stringify(messages, null, 2));
+}
+
+async function readUsers(): Promise<User[]> {
+  try {
+    const data = await readFile(USERS_FILE, "utf-8");
+    return JSON.parse(data);
+  } catch {
+    return [];
+  }
+}
+
+async function writeUsers(users: User[]): Promise<void> {
+  await ensureDataDir();
+  await writeFile(USERS_FILE, JSON.stringify(users, null, 2));
+}
+
+export class FileStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    const users = await readUsers();
+    return users.find(u => u.id === id);
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
+    const users = await readUsers();
+    return users.find(u => u.username === username);
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
+    const users = await readUsers();
+    const user: User = {
+      id: randomUUID(),
+      ...insertUser
+    };
+    users.push(user);
+    await writeUsers(users);
     return user;
   }
 
   async getMessages(): Promise<Message[]> {
-    return await db.select().from(messages).orderBy(messages.timestamp);
+    const messages = await readMessages();
+    return messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   }
 
   async createMessage(message: InsertMessage): Promise<Message> {
-    const [newMessage] = await db.insert(messages).values(message).returning();
+    const messages = await readMessages();
+    const newMessage: Message = {
+      id: randomUUID(),
+      ...message,
+      timestamp: new Date().toISOString()
+    };
+    messages.push(newMessage);
+    await writeMessages(messages);
     return newMessage;
   }
 
   async updateMessage(id: string, updates: Partial<InsertMessage>): Promise<Message | undefined> {
-    const [updated] = await db.update(messages).set(updates).where(eq(messages.id, id)).returning();
+    const messages = await readMessages();
+    const index = messages.findIndex(m => m.id === id);
+    if (index === -1) return undefined;
+    
+    const updated = { ...messages[index], ...updates };
+    messages[index] = updated;
+    await writeMessages(messages);
     return updated;
   }
 
   async deleteMessage(id: string): Promise<boolean> {
-    const result = await db.delete(messages).where(eq(messages.id, id));
-    return result.rowCount !== null && result.rowCount > 0;
+    const messages = await readMessages();
+    const index = messages.findIndex(m => m.id === id);
+    if (index === -1) return false;
+    
+    messages.splice(index, 1);
+    await writeMessages(messages);
+    return true;
   }
 }
 
-export const storage = new DatabaseStorage();
+export const storage = new FileStorage();

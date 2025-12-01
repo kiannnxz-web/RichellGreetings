@@ -7,6 +7,9 @@
   "deploy": {
     "startCommand": "npm start",
     "restartPolicyType": "on_failure",
-    "restartPolicyMaxRetries": 5
+    "restartPolicyMaxRetries": 5,
+    "volumes": {
+      "data": "/app/data"
+    }
   }
 }
